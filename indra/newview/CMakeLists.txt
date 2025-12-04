@@ -133,6 +133,7 @@ set(viewer_SOURCE_FILES
     fsfloaterprotectedfolders.cpp
     fsfloaterradar.cpp
     fsfloatersearch.cpp
+    fsfloatersplashscreensettings.cpp
     fsfloaterstatistics.cpp
     fsfloaterstreamtitle.cpp
     fsfloaterteleporthistory.cpp
@@ -974,6 +975,7 @@ set(viewer_HEADER_FILES
     fsfloaterprotectedfolders.h
     fsfloaterradar.h
     fsfloatersearch.h
+    fsfloatersplashscreensettings.h
     fsfloaterstatistics.h
     fsfloaterstreamtitle.h
     fsfloaterteleporthistory.h
@@ -2498,10 +2500,11 @@ elseif (DARWIN)
         PROPERTIES
         RESOURCE Firestorm.xib
         LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Xlinker -dead_strip"
-       #<FS:TS> Force the SDK version in the linked executable to be 10.12. This will fool
+        #<FS:TS> Force the SDK version in the linked executable to be 10.12. This will fool
         # macOS into using the pre-Mojave display system, avoiding the blurry display that
         # otherwise occurs when upscaling the viewer to Retina resolution levels.
         LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Xlinker -platform_version -Xlinker macos -Xlinker ${CMAKE_OSX_DEPLOYMENT_TARGET} -Xlinker 10.12"
+
         )
     if(HAVOK)
       set_target_properties(${VIEWER_BINARY_NAME}
