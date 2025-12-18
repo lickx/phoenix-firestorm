@@ -114,6 +114,7 @@ set(viewer_SOURCE_FILES
     fsdroptarget.cpp
     fsexportperms.cpp
     fsfloateraddtocontactset.cpp
+    fsfavoritegroups.cpp
     fsfloaterassetblacklist.cpp
     fsfloateravatarrendersettings.cpp
     fsfloaterblocklist.cpp
@@ -186,6 +187,8 @@ set(viewer_SOURCE_FILES
     lfsimfeaturehandler.cpp
     llflickrconnect.cpp
     llfloaterflickr.cpp
+    omnifilter.cpp
+    omnifilterengine.cpp
     fsprimfeedconnect.cpp
     fsfloaterprimfeed.cpp
     llpanelopenregionsettings.cpp
@@ -956,6 +959,7 @@ set(viewer_HEADER_FILES
     fsdroptarget.h
     fsexportperms.h
     fsfloateraddtocontactset.h
+    fsfavoritegroups.h
     fsfloaterassetblacklist.h
     fsfloateravatarrendersettings.h
     fsfloaterblocklist.h
@@ -1034,6 +1038,8 @@ set(viewer_HEADER_FILES
     fsfloaterprimfeed.h
     # <FS:Ansariel> [Legacy Bake]
     llagentwearablesfetch.h
+    omnifilter.h
+    omnifilterengine.h
     vjlocalmesh.h
     vjfloaterlocalmesh.h
     vjlocalmeshimportdae.h
