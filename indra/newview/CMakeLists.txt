@@ -150,6 +150,7 @@ set(viewer_SOURCE_FILES
     fslslpreproc.cpp
     fslslpreprocviewer.cpp
     fsmaniprotatejoint.cpp
+    fsmaniptranslatejoint.cpp
     fsmoneytracker.cpp
     fsnamelistavatarmenu.cpp
     fsnearbychatbarlistener.cpp
@@ -997,6 +998,7 @@ set(viewer_HEADER_FILES
     fslslpreprocviewer.h
     fsmoneytracker.h
     fsmaniprotatejoint.h
+    fsmaniptranslatejoint.h
     fsnamelistavatarmenu.h
     fsnearbychatbarlistener.h
     fsnearbychatcontrol.h
@@ -2506,11 +2508,6 @@ elseif (DARWIN)
         PROPERTIES
         RESOURCE Firestorm.xib
         LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Xlinker -dead_strip"
-        #<FS:TS> Force the SDK version in the linked executable to be 10.12. This will fool
-        # macOS into using the pre-Mojave display system, avoiding the blurry display that
-        # otherwise occurs when upscaling the viewer to Retina resolution levels.
-        LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Xlinker -platform_version -Xlinker macos -Xlinker ${CMAKE_OSX_DEPLOYMENT_TARGET} -Xlinker 10.12"
-
         )
     if(HAVOK)
       set_target_properties(${VIEWER_BINARY_NAME}
