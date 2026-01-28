@@ -467,6 +467,18 @@ private:
 protected:
     LLFrameTimer    mInvisibleTimer;
 
+
+    //--------------------------------------------------------------------
+    // Misc state
+    //--------------------------------------------------------------------
+
+private:
+    // lickx: keep track of custom camera params to restore after standup
+    LLVector3       mUnsitCameraOffset;
+    LLVector3d      mUnsitFocusOffset;
+    F32             mUnsitCameraScale;
+
+
 /**                    State
  **                                                                            **
  *******************************************************************************/

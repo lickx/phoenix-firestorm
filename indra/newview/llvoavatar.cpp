@@ -8983,6 +8983,18 @@ void LLVOAvatar::sitOnObject(LLViewerObject *sit_object)
         // Might be first sit
         //LLFirstUse::useSit();
 
+        //Lickx: While sitting override custom camera params with the default rear view ones
+        if (CAMERA_PRESET_REAR_VIEW != gAgentCamera.getCameraPreset())
+        {
+            mUnsitCameraOffset = gSavedSettings.getVector3("CameraOffsetRearView");
+            mUnsitFocusOffset  = gSavedSettings.getVector3d("FocusOffsetRearView");
+            mUnsitCameraScale  = gSavedSettings.getF32("CameraOffsetScale");
+            gSavedSettings.setVector3("CameraOffsetRearView", LLVector3(-3.0f, 0.0f, 0.75f));
+            gSavedSettings.setVector3d("FocusOffsetRearView", LLVector3d(1.0f, 0.0f, 1.0f));
+            gSavedSettings.setF32("CameraOffsetScale", 1.0f);
+            gAgentCamera.resetCameraZoomFraction();
+        }
+
         gAgent.setFlying(false);
         gAgentCamera.setThirdPersonHeadOffset(LLVector3::zero);
         //interpolate to new camera position
@@ -9117,6 +9129,15 @@ void LLVOAvatar::getOffObject()
         gAgent.resetAxes(at_axis);
         gAgentCamera.setThirdPersonHeadOffset(LLVector3(0.f, 0.f, 1.f));
         gAgentCamera.setSitCamera(LLUUID::null);
+
+        // Lickx: Restore custom camera params when standing up
+        if (CAMERA_PRESET_REAR_VIEW != gAgentCamera.getCameraPreset())
+        {
+            gSavedSettings.setVector3("CameraOffsetRearView", mUnsitCameraOffset);
+            gSavedSettings.setVector3d("FocusOffsetRearView", mUnsitFocusOffset);
+            gSavedSettings.setF32("CameraOffsetScale", mUnsitCameraScale);
+            gAgentCamera.resetCameraZoomFraction();
+        }
 
         //KC: revoke perms on sit
         U32 revoke_on = gSavedSettings.getU32("FSRevokePerms");
