@@ -136,7 +136,7 @@
 #include "llsidepanelappearance.h"
 #include "llviewermenufile.h"
 #include "llviewernetwork.h"    // [FS:CR] isInSecondlife()
-
+#include "llfloatercamera.h"    // [FS:Lotek] Camera restore in getOffObject
 
 extern F32 SPEED_ADJUST_MAX;
 extern F32 SPEED_ADJUST_MAX_SEC;
@@ -8983,6 +8983,21 @@ void LLVOAvatar::sitOnObject(LLViewerObject *sit_object)
         // Might be first sit
         //LLFirstUse::useSit();
 
+        // <FS:Lotek> While sitting override custom camera params with the default rear view ones
+        bool useDefaultRearViewSit = gSavedSettings.getBOOL("FSDefaultRearViewSit");
+        if (useDefaultRearViewSit == true && CAMERA_PRESET_REAR_VIEW != gAgentCamera.getCameraPreset())
+        {
+            mUnsitCameraPreset = gSavedSettings.getString("PresetCameraActive");
+            mUnsitCameraOffset = gSavedSettings.getVector3("CameraOffsetRearView");
+            mUnsitFocusOffset  = gSavedSettings.getVector3d("FocusOffsetRearView");
+            mUnsitCameraScale  = gSavedSettings.getF32("CameraOffsetScale");
+            gSavedSettings.setVector3("CameraOffsetRearView", LLVector3(-3.0f, 0.0f, 0.75f));
+            gSavedSettings.setVector3d("FocusOffsetRearView", LLVector3d(1.0f, 0.0f, 1.0f));
+            gSavedSettings.setF32("CameraOffsetScale", 1.0f);
+            gAgentCamera.resetCameraZoomFraction();
+        }
+        // </FS>
+
         gAgent.setFlying(false);
         gAgentCamera.setThirdPersonHeadOffset(LLVector3::zero);
         //interpolate to new camera position
@@ -9117,6 +9132,24 @@ void LLVOAvatar::getOffObject()
         gAgent.resetAxes(at_axis);
         gAgentCamera.setThirdPersonHeadOffset(LLVector3(0.f, 0.f, 1.f));
         gAgentCamera.setSitCamera(LLUUID::null);
+
+        // <FS:Lotek> Restore custom camera params when standing up
+        bool useDefaultRearViewSit = gSavedSettings.getBOOL("FSDefaultRearViewSit");
+        if (useDefaultRearViewSit && CAMERA_PRESET_REAR_VIEW == gAgentCamera.getCameraPreset())
+        {
+            if (!mUnsitCameraPreset.empty()) // restore preset
+            {
+                gSavedSettings.setString("PresetCameraActive", LLStringUtil::null);
+                LLFloaterCamera::switchToPreset(mUnsitCameraPreset);
+                mUnsitCameraPreset.clear();
+            } else { // there was no preset active before sitting, restore just the params
+                gSavedSettings.setVector3("CameraOffsetRearView", mUnsitCameraOffset);
+                gSavedSettings.setVector3d("FocusOffsetRearView", mUnsitFocusOffset);
+                gSavedSettings.setF32("CameraOffsetScale", mUnsitCameraScale);
+                gAgentCamera.resetCameraZoomFraction();
+            }
+        }
+        // </FS>
 
         //KC: revoke perms on sit
         U32 revoke_on = gSavedSettings.getU32("FSRevokePerms");
