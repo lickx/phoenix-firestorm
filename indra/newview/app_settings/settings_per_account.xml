@@ -1539,5 +1539,16 @@
             <key>Value</key>
             <map/>
         </map>
+    <key>FSDefaultRearViewSit</key>
+        <map>
+            <key>Comment</key>
+            <string>Switches camera params to default rear view while sat down</string>
+            <key>Persist</key>
+            <integer>1</integer>
+            <key>Type</key>
+            <string>Boolean</string>
+            <key>Value</key>
+            <integer>0</integer>
+        </map>
     </map>
 </llsd>
