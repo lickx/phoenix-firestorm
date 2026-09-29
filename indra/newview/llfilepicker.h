@@ -62,18 +62,10 @@
 
 extern "C" {
 // mostly for Linux, possible on others
-#if LL_GTK
-# include "gtk/gtk.h"
-#error "Direct use of GTK is deprecated"
-#endif // LL_GTK
 }
 
 class LLFilePicker
 {
-#if LL_GTK
-    friend class LLDirPicker;
-    friend void chooser_responder(GtkWidget *, gint, gpointer);
-#endif // LL_GTK
 public:
     // calling this before main() is undefined
     static LLFilePicker& instance( void ) { return sInstance; }
@@ -199,15 +191,6 @@ private:
                                  void *userdata);
 #endif
 
-#if LL_GTK
-    static void add_to_selectedfiles(gpointer data, gpointer user_data);
-    static void chooser_responder(GtkWidget *widget, gint response, gpointer user_data);
-    // we remember the last path that was accessed for a particular usage
-    //std::map <std::string, std::string> mContextToPathMap; // <FS> FIRE-14924: Remember last used directory
-    std::string mCurContextName;
-    // we also remember the extension of the last added file.
-    std::string mCurrentExtension;
-#endif
 #if LL_FLTK
     enum EType
     {
@@ -223,10 +206,6 @@ private:
     static LLFilePicker sInstance;
 
 protected:
-#if LL_GTK
-        GtkWindow* buildFilePicker(bool is_save, bool is_folder,
-                   std::string context = "generic");
-#endif
 
 public:
     // don't call these directly please.

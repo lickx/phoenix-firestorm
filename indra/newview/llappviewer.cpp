@@ -301,10 +301,6 @@ using namespace LL;
 #include "fsassetblacklist.h"
 #include "bugsplatattributes.h"
 
-#if LL_LINUX && LL_GTK
-#include "glib.h"
-#endif // (LL_LINUX) && LL_GTK
-
 #ifdef LL_DISCORD
 #define DISCORDPP_IMPLEMENTATION
 #include <discordpp.h>

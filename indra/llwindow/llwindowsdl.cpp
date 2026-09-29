@@ -40,14 +40,6 @@
 #include "lldir.h"
 #include "llfindlocale.h"
 
-#if LL_GTK
-extern "C" {
-# include "gtk/gtk.h"
-#error "Direct use of GTK is deprecated"
-}
-#include <locale.h>
-#endif // LL_GTK
-
 #ifdef LL_GLIB
 #include <glib.h>
 #endif
@@ -102,73 +94,6 @@ void maybe_unlock_display(void)
     }
 }
 
-
-#if LL_GTK
-// Lazily initialize and check the runtime GTK version for goodness.
-// static
-bool LLWindowSDL::ll_try_gtk_init(void)
-{
-    static bool done_gtk_diag = false;
-    static bool gtk_is_good = false;
-    static bool done_setlocale = false;
-    static bool tried_gtk_init = false;
-
-    if (!done_setlocale)
-    {
-        LL_INFOS() << "Starting GTK Initialization." << LL_ENDL;
-        maybe_lock_display();
-        gtk_disable_setlocale();
-        maybe_unlock_display();
-        done_setlocale = true;
-    }
-
-    if (!tried_gtk_init)
-    {
-        tried_gtk_init = true;
-
-#if ( !defined(GLIB_MAJOR_VERSION) && !defined(GLIB_MINOR_VERSION) ) || ( GLIB_MAJOR_VERSION < 2 ) || ( GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION < 32 )
-        if (!g_thread_supported ()) g_thread_init (NULL);
-#endif
-
-        maybe_lock_display();
-        gtk_is_good = gtk_init_check(NULL, NULL);
-        maybe_unlock_display();
-        if (!gtk_is_good)
-            LL_WARNS() << "GTK Initialization failed." << LL_ENDL;
-    }
-
-    if (gtk_is_good && !done_gtk_diag)
-    {
-        LL_INFOS() << "GTK Initialized." << LL_ENDL;
-        LL_INFOS() << "- Compiled against GTK version "
-            << GTK_MAJOR_VERSION << "."
-            << GTK_MINOR_VERSION << "."
-            << GTK_MICRO_VERSION << LL_ENDL;
-        LL_INFOS() << "- Running against GTK version "
-            << gtk_major_version << "."
-            << gtk_minor_version << "."
-            << gtk_micro_version << LL_ENDL;
-        maybe_lock_display();
-        const gchar* gtk_warning = gtk_check_version(
-            GTK_MAJOR_VERSION,
-            GTK_MINOR_VERSION,
-            GTK_MICRO_VERSION);
-        maybe_unlock_display();
-        if (gtk_warning)
-        {
-            LL_WARNS() << "- GTK COMPATIBILITY WARNING: " <<
-                gtk_warning << LL_ENDL;
-            gtk_is_good = false;
-        } else {
-            LL_INFOS() << "- GTK version is good." << LL_ENDL;
-        }
-
-        done_gtk_diag = true;
-    }
-
-    return gtk_is_good;
-}
-#endif // LL_GTK
 
 
 #if LL_X11
@@ -466,13 +391,6 @@ LLWindowSDL::LLWindowSDL(LLWindowCallbacks* callbacks,
     mSDL_XWindowID = None;
     mSDL_Display = NULL;
 #endif // LL_X11
-
-#if LL_GTK
-    // We MUST be the first to initialize GTK so that GTK doesn't get badly
-    // initialized with a non-C locale and cause lots of serious random
-    // weirdness.
-    ll_try_gtk_init();
-#endif // LL_GTK
 
     // Assume 4:3 aspect ratio until we know better
     mOriginalAspectRatio = 1024.0 / 768.0;
@@ -1432,12 +1350,6 @@ void LLWindowSDL::beforeDialog()
     }
 #endif // LL_X11
 
-#if LL_GTK
-    // this is a good time to grab some GTK version information for
-    // diagnostics, if not already done.
-    ll_try_gtk_init();
-#endif // LL_GTK
-
     maybe_lock_display();
 }
 
@@ -1513,95 +1425,6 @@ void LLWindowSDL::flashIcon(F32 seconds)
     }
 }
 
-
-#if LL_GTK
-bool LLWindowSDL::isClipboardTextAvailable()
-{
-    if (ll_try_gtk_init())
-    {
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_NONE);
-        return gtk_clipboard_wait_is_text_available(clipboard) ?
-            true : false;
-    }
-    return false; // failure
-}
-
-bool LLWindowSDL::pasteTextFromClipboard(LLWString &text)
-{
-    if (ll_try_gtk_init())
-    {
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_NONE);
-        gchar * const data = gtk_clipboard_wait_for_text(clipboard);
-        if (data)
-        {
-            text = LLWString(utf8str_to_wstring(data));
-            g_free(data);
-            return true;
-        }
-    }
-    return false; // failure
-}
-
-bool LLWindowSDL::copyTextToClipboard(const LLWString &text)
-{
-    if (ll_try_gtk_init())
-    {
-        const std::string utf8 = wstring_to_utf8str(text);
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_NONE);
-        gtk_clipboard_set_text(clipboard, utf8.c_str(), utf8.length());
-        return true;
-    }
-    return false; // failure
-}
-
-
-bool LLWindowSDL::isPrimaryTextAvailable()
-{
-    if (ll_try_gtk_init())
-    {
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_SELECTION_PRIMARY);
-        return gtk_clipboard_wait_is_text_available(clipboard) ?
-            true : false;
-    }
-    return false; // failure
-}
-
-bool LLWindowSDL::pasteTextFromPrimary(LLWString &text)
-{
-    if (ll_try_gtk_init())
-    {
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_SELECTION_PRIMARY);
-        gchar * const data = gtk_clipboard_wait_for_text(clipboard);
-        if (data)
-        {
-            text = LLWString(utf8str_to_wstring(data));
-            g_free(data);
-            return true;
-        }
-    }
-    return false; // failure
-}
-
-bool LLWindowSDL::copyTextToPrimary(const LLWString &text)
-{
-    if (ll_try_gtk_init())
-    {
-        const std::string utf8 = wstring_to_utf8str(text);
-        GtkClipboard * const clipboard =
-            gtk_clipboard_get(GDK_SELECTION_PRIMARY);
-        gtk_clipboard_set_text(clipboard, utf8.c_str(), utf8.length());
-        return true;
-    }
-    return false; // failure
-}
-
-#else
-
 bool LLWindowSDL::isClipboardTextAvailable()
 {
     return mSDL_Display && XGetSelectionOwner(mSDL_Display, XA_CLIPBOARD) != None;
@@ -1632,8 +1455,6 @@ bool LLWindowSDL::copyTextToPrimary(const LLWString &s)
 {
     return setSelectionText(XA_PRIMARY, s);
 }
-
-#endif // LL_GTK
 
 LLWindow::LLWindowResolution* LLWindowSDL::getSupportedResolutions(S32 &num_resolutions)
 {
@@ -1968,33 +1789,6 @@ finally:
 // virtual
 void LLWindowSDL::processMiscNativeEvents()
 {
-#if LL_GTK
-    // Pump GTK events to avoid starvation for:
-    // * DBUS servicing
-    // * Anything else which quietly hooks into the default glib/GTK loop
-    if (ll_try_gtk_init())
-    {
-        // Yuck, Mozilla's GTK callbacks play with the locale - push/pop
-        // the locale to protect it, as exotic/non-C locales
-        // causes our code lots of general critical weirdness
-        // and crashness. (SL-35450)
-        static std::string saved_locale;
-        saved_locale = ll_safe_string(setlocale(LC_ALL, NULL));
-
-        // Pump until we've nothing left to do or passed 1/15th of a
-        // second pumping for this frame.
-        static LLTimer pump_timer;
-        pump_timer.reset();
-        pump_timer.setTimerExpirySec(1.0f / 15.0f);
-        do {
-             // Always do at least one non-blocking pump
-            gtk_main_iteration_do(false);
-        } while (gtk_events_pending() &&
-             !pump_timer.hasExpired());
-
-        setlocale(LC_ALL, saved_locale.c_str() );
-    }
-#endif // LL_GTK
 #if LL_GLIB
     // Pump until we've nothing left to do or passed 1/15th of a
     // second pumping for this frame.
@@ -2538,197 +2332,6 @@ void LLSplashScreenSDL::hideImpl()
 {
 }
 
-
-
-#if LL_GTK
-static void response_callback (GtkDialog *dialog,
-                   gint       arg1,
-                   gpointer   user_data)
-{
-    gint *response = (gint*)user_data;
-    *response = arg1;
-    gtk_widget_destroy(GTK_WIDGET(dialog));
-    gtk_main_quit();
-}
-
-S32 OSMessageBoxSDL(const std::string& text, const std::string& caption, U32 type)
-{
-    S32 rtn = OSBTN_CANCEL;
-
-    if(gWindowImplementation != NULL)
-        gWindowImplementation->beforeDialog();
-
-    if (LLWindowSDL::ll_try_gtk_init())
-    {
-        GtkWidget *win = NULL;
-
-        LL_INFOS() << "Creating a dialog because we're in windowed mode and GTK is happy." << LL_ENDL;
-
-        GtkDialogFlags flags = GTK_DIALOG_MODAL;
-        GtkMessageType messagetype;
-        GtkButtonsType buttons;
-        switch (type)
-        {
-        default:
-        case OSMB_OK:
-            messagetype = GTK_MESSAGE_WARNING;
-            buttons = GTK_BUTTONS_OK;
-            break;
-        case OSMB_OKCANCEL:
-            messagetype = GTK_MESSAGE_QUESTION;
-            buttons = GTK_BUTTONS_OK_CANCEL;
-            break;
-        case OSMB_YESNO:
-            messagetype = GTK_MESSAGE_QUESTION;
-            buttons = GTK_BUTTONS_YES_NO;
-            break;
-        }
-        win = gtk_message_dialog_new(NULL, flags, messagetype, buttons, "%s",
-                                     text.c_str());
-
-# if LL_X11
-        // Make GTK tell the window manager to associate this
-        // dialog with our non-GTK SDL window, which should try
-        // to keep it on top etc.
-        if (gWindowImplementation &&
-            gWindowImplementation->mSDL_XWindowID != None)
-        {
-            gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin
-            GdkWindow *gdkwin = gdk_window_foreign_new(gWindowImplementation->mSDL_XWindowID);
-            gdk_window_set_transient_for(GTK_WIDGET(win)->window,
-                             gdkwin);
-        }
-# endif //LL_X11
-
-        gtk_window_set_position(GTK_WINDOW(win),
-                    GTK_WIN_POS_CENTER_ON_PARENT);
-
-        gtk_window_set_type_hint(GTK_WINDOW(win),
-                     GDK_WINDOW_TYPE_HINT_DIALOG);
-
-        if (!caption.empty())
-            gtk_window_set_title(GTK_WINDOW(win), caption.c_str());
-
-        gint response = GTK_RESPONSE_NONE;
-        g_signal_connect (win,
-                  "response",
-                  G_CALLBACK (response_callback),
-                  &response);
-
-        // we should be able to use a gtk_dialog_run(), but it's
-        // apparently not written to exist in a world without a higher
-        // gtk_main(), so we manage its signal/destruction outselves.
-        gtk_widget_show_all (win);
-        gtk_main();
-
-        //LL_INFOS() << "response: " << response << LL_ENDL;
-        switch (response)
-        {
-        case GTK_RESPONSE_OK:     rtn = OSBTN_OK; break;
-        case GTK_RESPONSE_YES:    rtn = OSBTN_YES; break;
-        case GTK_RESPONSE_NO:     rtn = OSBTN_NO; break;
-        case GTK_RESPONSE_APPLY:  rtn = OSBTN_OK; break;
-        case GTK_RESPONSE_NONE:
-        case GTK_RESPONSE_CANCEL:
-        case GTK_RESPONSE_CLOSE:
-        case GTK_RESPONSE_DELETE_EVENT:
-        default: rtn = OSBTN_CANCEL;
-        }
-    }
-    else
-    {
-        LL_INFOS() << "MSGBOX: " << caption << ": " << text << LL_ENDL;
-        LL_INFOS() << "Skipping dialog because we're in fullscreen mode or GTK is not happy." << LL_ENDL;
-        rtn = OSBTN_OK;
-    }
-
-    if(gWindowImplementation != NULL)
-        gWindowImplementation->afterDialog();
-
-    return rtn;
-}
-
-static void color_changed_callback(GtkWidget *widget,
-                   gpointer user_data)
-{
-    GtkColorSelection *colorsel = GTK_COLOR_SELECTION(widget);
-    GdkColor *colorp = (GdkColor*)user_data;
-
-    gtk_color_selection_get_current_color(colorsel, colorp);
-}
-
-bool LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
-{
-    bool rtn = false;
-
-    beforeDialog();
-
-    if (ll_try_gtk_init())
-    {
-        GtkWidget *win = NULL;
-
-        win = gtk_color_selection_dialog_new(NULL);
-
-# if LL_X11
-        // Get GTK to tell the window manager to associate this
-        // dialog with our non-GTK SDL window, which should try
-        // to keep it on top etc.
-        if (mSDL_XWindowID != None)
-        {
-            gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin
-            GdkWindow *gdkwin = gdk_window_foreign_new(mSDL_XWindowID);
-            gdk_window_set_transient_for(GTK_WIDGET(win)->window,
-                             gdkwin);
-        }
-# endif //LL_X11
-
-        GtkColorSelection *colorsel = GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG(win)->colorsel);
-
-        GdkColor color, orig_color;
-        orig_color.pixel = 0;
-        orig_color.red = guint16(65535 * *r);
-        orig_color.green= guint16(65535 * *g);
-        orig_color.blue = guint16(65535 * *b);
-        color = orig_color;
-
-        gtk_color_selection_set_previous_color (colorsel, &color);
-        gtk_color_selection_set_current_color (colorsel, &color);
-        gtk_color_selection_set_has_palette (colorsel, true);
-        gtk_color_selection_set_has_opacity_control(colorsel, false);
-
-        gint response = GTK_RESPONSE_NONE;
-        g_signal_connect (win,
-                  "response",
-                  G_CALLBACK (response_callback),
-                  &response);
-
-        g_signal_connect (G_OBJECT (colorsel), "color_changed",
-                  G_CALLBACK (color_changed_callback),
-                  &color);
-
-        gtk_window_set_modal(GTK_WINDOW(win), true);
-        gtk_widget_show_all(win);
-        // hide the help button - we don't service it.
-        gtk_widget_hide(GTK_COLOR_SELECTION_DIALOG(win)->help_button);
-        gtk_main();
-
-        if (response == GTK_RESPONSE_OK &&
-            (orig_color.red != color.red
-             || orig_color.green != color.green
-             || orig_color.blue != color.blue) )
-        {
-            *r = color.red / 65535.0f;
-            *g = color.green / 65535.0f;
-            *b = color.blue / 65535.0f;
-            rtn = true;
-        }
-    }
-
-    afterDialog();
-
-    return rtn;
-}
-#else
 S32 OSMessageBoxSDL(const std::string& text, const std::string& caption, U32 type)
 {
     LL_INFOS() << "MSGBOX: " << caption << ": " << text << LL_ENDL;
@@ -2739,7 +2342,6 @@ bool LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
 {
     return (false);
 }
-#endif // LL_GTK
 
 /*
         Make the raw keyboard data available - used to poke through to LLQtWebKit so
@@ -2882,27 +2484,6 @@ void LLWindowSDL::openFile(const std::string& file_name)
 
 void *LLWindowSDL::getPlatformWindow()
 {
-#if LL_GTK && LL_LLMOZLIB_ENABLED
-    if (LLWindowSDL::ll_try_gtk_init())
-    {
-        maybe_lock_display();
-
-        GtkWidget *owin = gtk_window_new(GTK_WINDOW_POPUP);
-        // Why a layout widget?  A MozContainer would be ideal, but
-        // it involves exposing Mozilla headers to mozlib-using apps.
-        // A layout widget with a GtkWindow parent has the desired
-        // properties of being plain GTK, having a window, and being
-        // derived from a GtkContainer.
-        GtkWidget *rtnw = gtk_layout_new(NULL, NULL);
-        gtk_container_add(GTK_CONTAINER(owin), rtnw);
-        gtk_widget_realize(rtnw);
-        GTK_WIDGET_UNSET_FLAGS(GTK_WIDGET(rtnw), GTK_NO_WINDOW);
-
-        maybe_unlock_display();
-
-        return rtnw;
-    }
-#endif // LL_GTK && LL_LLMOZLIB_ENABLED
     // Unixoid mozilla really needs GTK.
     return NULL;
 }

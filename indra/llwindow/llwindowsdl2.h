@@ -150,11 +150,6 @@ public:
     void (*Lock_Display)(void);
     void (*Unlock_Display)(void);
 
-#if LL_GTK
-    // Lazily initialize and check the runtime GTK version for goodness.
-    static bool ll_try_gtk_init(void);
-#endif // LL_GTK
-
 #if LL_X11
     static Window get_SDL_XWindowID(void);
     static Display* get_SDL_Display(void);
