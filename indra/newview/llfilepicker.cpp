@@ -48,6 +48,8 @@
 
 #if LL_LINUX
 #include "llhttpconstants.h"    // file picker uses some of thes constants on Linux
+#include <filesystem>
+#include <pwd.h>
 #endif
 
 //
@@ -1818,10 +1820,12 @@ bool LLFilePicker::openFileDialog( int32_t filter, bool blocking, EType aType )
     else if( aType == eSaveFile )
         flType = Fl_Native_File_Chooser::BROWSE_SAVE_FILE;
 
+    Fl::option(Fl::OPTION_FNFC_USES_GTK, false);
     Fl_Native_File_Chooser flDlg;
 
     std::string file_dialog_title;
     std::string file_dialog_filter;
+    std::string file_dialog_path;
 
     if (aType == EType::eSaveFile)
     {
@@ -1916,6 +1920,7 @@ bool LLFilePicker::openFileDialog( int32_t filter, bool blocking, EType aType )
         // can't say I like this combining of verb+type, it might not work too well in all languages -Zi
         file_dialog_title = LLTrans::getString("save_file_verb") + " " + LLTrans::getString(file_type);
         file_dialog_filter = LLTrans::getString(file_type) + " \t" + file_dialog_filter;
+        file_dialog_path = gSavedSettings.getString("FSFilePickerSaveDirectory");
     }
     else
     {
@@ -2008,17 +2013,30 @@ bool LLFilePicker::openFileDialog( int32_t filter, bool blocking, EType aType )
         if (aType == EType::eOpenMultiple)
         {
             file_dialog_title = LLTrans::getString("load_files");
+            file_dialog_path = gSavedSettings.getString("FSFilePickerOpenDirectory");
         }
         else
         {
             // can't say I like this combining of verb+type, it might not work too well in all languages -Zi
             file_dialog_title = LLTrans::getString("load_file_verb") + " " + LLTrans::getString(file_type);
             file_dialog_filter = LLTrans::getString(file_type) + " \t" + file_dialog_filter;
+            file_dialog_path = gSavedSettings.getString("FSFilePickerOpenDirectory");
         }
     }
 
     flDlg.title(file_dialog_title.c_str());
     flDlg.type(flType);
+    const std::filesystem::path pathverify(file_dialog_path);
+    if (file_dialog_path.empty() || !std::filesystem::exists(pathverify))
+    {
+        int user_uid;
+        passwd *homedir;
+        user_uid = getuid();
+        homedir = getpwuid(user_uid);
+
+        file_dialog_path = homedir->pw_dir;
+    }
+    flDlg.directory(file_dialog_path.c_str());
 
     if (!file_dialog_filter.empty())
     {
@@ -2033,6 +2051,22 @@ bool LLFilePicker::openFileDialog( int32_t filter, bool blocking, EType aType )
         int32_t count = flDlg.count();
         if( count < 0 )
             count = 0;
+        if (count > 0)
+        {
+            const std::filesystem::path full_path(flDlg.filename(0));
+            const char* cur_folder = full_path.parent_path().string().c_str();
+            if (cur_folder && strlen(cur_folder) > 0)
+            {
+                if (aType == EType::eSaveFile)
+                {
+                    gSavedSettings.setString("FSFilePickerSaveDirectory", cur_folder);
+                }
+                else
+                {
+                    gSavedSettings.setString("FSFilePickerOpenDirectory", cur_folder);
+                }
+            }
+        }
         for( int32_t i = 0; i < count; ++i )
         {
             char const *pFile = flDlg.filename(i);

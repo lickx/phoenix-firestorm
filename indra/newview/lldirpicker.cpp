@@ -274,6 +274,7 @@ bool LLDirPicker::getDir(std::string* filename, bool blocking)
     return false;
 #else
     gViewerWindow->getWindow()->beforeDialog();
+    Fl::option(Fl::OPTION_FNFC_USES_GTK, false);
     Fl_Native_File_Chooser flDlg;
     flDlg.title(LLTrans::getString("choose_the_directory").c_str());
     flDlg.type(Fl_Native_File_Chooser::BROWSE_DIRECTORY );
