@@ -467,6 +467,19 @@ private:
 protected:
     LLFrameTimer    mInvisibleTimer;
 
+
+    //--------------------------------------------------------------------
+    // Misc state
+    //--------------------------------------------------------------------
+
+private:
+    // <FS:Lotek> custom camera params to restore after standup with FSDefaultRearViewSit
+    std::string     mUnsitCameraPreset;
+    LLVector3       mUnsitCameraOffset;
+    LLVector3d      mUnsitFocusOffset;
+    F32             mUnsitCameraScale;
+    // </FS>
+
 /**                    State
  **                                                                            **
  *******************************************************************************/
