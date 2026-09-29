@@ -261,6 +261,7 @@ bool LLDirPicker::getDir(std::string* filename, bool blocking)
     flDlg.type(Fl_Native_File_Chooser::BROWSE_DIRECTORY );
 
     int res = flDlg.show();
+    Fl::flush(); // ensure dirpicker receives hide event
 
     gViewerWindow->getWindow()->afterDialog();
 

@@ -1489,6 +1489,8 @@ bool LLFilePicker::openFileDialog( int32_t filter, bool blocking, EType aType )
     }
 
     int res = flDlg.show();
+    Fl::flush(); // ensure filepicker receives hide event
+
     gViewerWindow->getWindow()->afterDialog();
 
     if( res == 0 )
