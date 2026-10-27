@@ -2622,7 +2622,7 @@ bool LLTabContainer::addLabelToolTip(LLTabTuple* tuple)
         tuple->mButton->getEnabled()) // Only if it is a valid button to apply the tool tip to.
     {
         // If the button label is truncated, then we want to try to use the tool tip.
-        if (tuple->mButton->isLabelTruncated())
+        if (tuple->mButton->labelIsTruncated())
         {
             tuple->mButton->setToolTip(tuple->mButton->getLabelSelected());
             tuple->mAutoToolTip = true;
